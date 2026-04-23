@@ -1,0 +1,17 @@
+services:
+  adminer:
+    container_name: adminer_mysql
+    image: adminer:latest
+    restart: always
+    ports:
+      - 8080:8080
+
+  db:
+    container_name: mysql
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin2007
+      MYSQL_DATABASE: tutorialdb
+    ports:
+      - 3306:3306
