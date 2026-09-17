@@ -4,6 +4,8 @@ const { Posts, Likes } = require("../models");
 
 const { validateToken } = require("../middlewares/AuthMiddleware")
 
+const filter = require('../utils/profanityFilter');
+
 router.get("/", validateToken, async (req, res) => {
     const listOfPosts = await Posts.findAll({ include: [Likes] });
     const likedPosts = await Likes.findAll({ where: { UserId: req.user.id } })
@@ -27,6 +29,11 @@ router.get('/byuserId/:id', async (req, res) => {
 
 router.post("/", validateToken, async (req, res) => {
     const post = req.body;
+
+    if (filter.isProfane(post.title) || filter.isProfane(post.postText)) {
+        return res.json({ error: "Post contains inappropriate language" });
+    }
+
     post.username = req.user.username;
     post.UserId = req.user.id;
     await Posts.create(post);

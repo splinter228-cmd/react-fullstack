@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../helpers/api";
+import Notification from "../components/Notification";
 import { AuthContext } from "../helpers/AuthContext";
 
 function Post() {
@@ -9,28 +10,29 @@ function Post() {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const { authState } = useContext(AuthContext);
+  const [notif, setNotif] = useState({ open: false, message: "", severity: "error" });
   let navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`http://localhost:3001/posts/byId/${id}`).then((response) => {
+    api.get(`/posts/byId/${id}`).then((response) => {
       setPostObject(response.data);
     });
 
-    axios.get(`http://localhost:3001/comments/${id}`).then((response) => {
+    api.get(`/comments/${id}`).then((response) => {
       setComments(response.data);
     });
   }, []);
 
   const addComment = () => {
-    axios
+    api
       .post(
-        "http://localhost:3001/comments",
+        "/comments",
         { commentBody: newComment, PostId: id },
         { headers: { accessToken: localStorage.getItem("accessToken") } }
       )
       .then((response) => {
         if (response.data.error) {
-          console.log(response.data.error);
+          setNotif({ open: true, message: response.data.error, severity: "error" });
         } else {
           setComments([...comments, response.data]);
           setNewComment("");
@@ -39,8 +41,8 @@ function Post() {
   };
 
   const deleteComment = (id) => {
-    axios
-      .delete(`http://localhost:3001/comments/${id}`, {
+    api
+      .delete(`/comments/${id}`, {
         headers: { accessToken: localStorage.getItem("accessToken") },
       })
       .then(() => {
@@ -49,8 +51,8 @@ function Post() {
   };
 
   const deletePost = (id) => {
-    axios
-      .delete(`http://localhost:3001/posts/${id}`, {
+    api
+      .delete(`/posts/${id}`, {
         headers: { accessToken: localStorage.getItem("accessToken") },
       })
       .then(() => {
@@ -61,16 +63,16 @@ function Post() {
   const editPost = (option) => {
     if (option === "title") {
       let newTitle = prompt("Enter New Title:");
-      axios.put(
-        "http://localhost:3001/posts/title",
+      api.put(
+        "/posts/title",
         { newTitle: newTitle, id: id },
         { headers: { accessToken: localStorage.getItem("accessToken") } }
       );
       setPostObject({ ...postObject, title: newTitle });
     } else {
       let newPostText = prompt("Enter New Text:");
-      axios.put(
-        "http://localhost:3001/posts/title",
+      api.put(
+        "/posts/postText",
         { newText: newPostText, id: id },
         { headers: { accessToken: localStorage.getItem("accessToken") } }
       );
@@ -79,7 +81,10 @@ function Post() {
   };
 
   return (
-    <div className="postPage">
+    <div
+      className="postPage"
+      style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/Home.jpeg)` }}
+    >
       <div className="leftSide">
         <div className="post" id="individual">
           <div
@@ -97,7 +102,12 @@ function Post() {
             {postObject.postText}
           </div>
           <div className="footer">
-            <span className="postAuthor">{postObject.username}</span>
+            <div className="postFooterAuthor">
+              <div className="postAvatar">
+                {postObject.username?.charAt(0).toUpperCase()}
+              </div>
+              <span className="postAuthor">{postObject.username}</span>
+            </div>
             {authState.username === postObject.username && (
               <button className="deletePostBtn" onClick={() => deletePost(postObject.id)}>
                 🗑 Delete Post
@@ -107,31 +117,43 @@ function Post() {
         </div>
       </div>
       <div className="rightSide">
-        <div className="addCommentContainer">
+        <div className="commentInputRow">
           <input
             type="text"
-            placeholder="Comment..."
+            placeholder="Write a comment..."
             autoComplete="off"
             value={newComment}
             onChange={(event) => setNewComment(event.target.value)}
           />
-          <button onClick={addComment}>Add Comment</button>
+          <button onClick={addComment}>Post</button>
         </div>
         <div className="listOfComments">
           {comments.map((comment, key) => (
-            <div key={key} className="comment">
-              <div className="commentContent">
-                <span className="commentUsername">{comment.username}</span>
-                <span className="commentBody">{comment.commentBody}</span>
+            <div key={key} className="commentRow">
+              <div className="postAvatar">
+                {comment.username?.charAt(0).toUpperCase()}
               </div>
-              {authState.username === comment.username && (
-                <button className="deleteCommentBtn" onClick={() => deleteComment(comment.id)}>
-                  ✕
-                </button>
-              )}
+              <div className="comment">
+                <div className="commentContent">
+                  <span className="commentUsername">{comment.username}</span>
+                  <span className="commentBody">{comment.commentBody}</span>
+                </div>
+                {authState.username === comment.username && (
+                  <button className="deleteCommentBtn" onClick={() => deleteComment(comment.id)}>
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
+
+        <Notification
+          open={notif.open}
+          message={notif.message}
+          severity={notif.severity}
+          onClose={() => setNotif({ ...notif, open: false })}
+        />
       </div>
     </div>
   );

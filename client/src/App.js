@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
 import Home from "./pages/Home";
 import CreatePost from "./pages/CreatePost";
 import Post from "./pages/Post";
@@ -7,11 +7,11 @@ import Login from "./pages/Login";
 import PageNotFound from "./pages/PageNotFound";
 import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
+import api from "./helpers/api";
 
 import Registration from "./pages/Registration";
 import { AuthContext } from "./helpers/AuthContext";
 import { useState, useEffect } from "react";
-import axios from "axios";
 
 function App() {
   const [authState, setAuthState] = useState({
@@ -21,8 +21,8 @@ function App() {
   });
 
   useEffect(() => {
-    axios
-      .get("http://localhost:3001/auth/auth", {
+    api
+      .get("/auth/auth", {
         headers: {
           accessToken: localStorage.getItem("accessToken"),
         },
@@ -53,13 +53,13 @@ function App() {
             <div className="links">
             {!authState.status ? (
               <>
-                <Link to="/Login" > Login</Link>
-                <Link to="/registration" > Registration</Link>
+                <NavLink to="/login" > Login</NavLink>
+                <NavLink to="/registration" > Registration</NavLink>
               </>
             ) : (
               <>
-                <Link to="/" > Home Page</Link>
-                <Link to="/createpost" > Create A Post</Link>
+                <NavLink to="/" end> Home Page</NavLink>
+                <NavLink to="/createpost" > Create A Post</NavLink>
               </>
             )}
 

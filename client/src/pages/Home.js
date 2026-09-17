@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
-import axios from "axios";
+import api from "../helpers/api";
 import { Link, useNavigate } from "react-router-dom";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { AuthContext } from "../helpers/AuthContext";
@@ -14,8 +14,8 @@ function Home() {
     if (!localStorage.getItem("accessToken")) {
       navigate("/login");
     } else {
-      axios
-        .get("http://localhost:3001/posts", {
+      api
+        .get("/posts", {
           headers: { accessToken: localStorage.getItem("accessToken") },
         })
         .then((response) => {
@@ -32,9 +32,9 @@ function Home() {
   }, []);
 
   const likeAPost = (postId) => {
-    axios
+    api
       .post(
-        "http://localhost:3001/likes",
+        "/likes",
         { PostId: postId },
         { headers: { accessToken: localStorage.getItem("accessToken") } }
       )
@@ -63,38 +63,73 @@ function Home() {
       });
   };
 
+  const topLikedPosts = [...listOfPosts]
+    .sort((a, b) => (b.Likes?.length || 0) - (a.Likes?.length || 0))
+    .slice(0, 3);
+
   return (
-    <div>
-      {listOfPosts.map((value) => (
-        <div key={value.id} className="post">
-          <div className="title">{value.title}</div>
+    <div
+      className="homePageContainer"
+      style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/Home.jpeg)` }}
+    >
+      <div className="homeFeed">
+        {listOfPosts.map((value) => (
+          <div key={value.id} className="post">
+            <div className="title">{value.title}</div>
 
-          <div
-            className="body"
-            onClick={() => navigate(`/post/${value.id}`)}
-          >
-            {value.postText}
+            <div
+              className="body"
+              onClick={() => navigate(`/post/${value.id}`)}
+            >
+              {value.postText}
+            </div>
+
+            <div className="footer">
+              <div className="username">
+                <Link to={`/profile/${value.UserId}`}> {value.username} </Link>
+              </div>
+              <div className="buttons">
+                <ThumbUpIcon
+                  onClick={() => likeAPost(value.id)}
+                  className={
+                    likedPosts.includes(value.id) ? "unlikeBttn" : "likeBttn"
+                  }
+                />
+                <label>{value.Likes?.length}</label>
+              </div>
+            </div>
           </div>
+        ))}
+      </div>
 
-          <div className="footer">
-            <div className="username">
-              <Link to={`/profile/${value.UserId}`}> {value.username} </Link>
+      <div className="homeSidebar">
+        <div className="sidebarCard">
+          <div className="sidebarProfileRow">
+            <div className="postAvatar">
+              {authState.username?.charAt(0).toUpperCase()}
             </div>
-            <div className="buttons">
-              <ThumbUpIcon
-                onClick={() => likeAPost(value.id)}
-                className={
-                  likedPosts.includes(value.id)
-                    ? "unlikeBttn"
-                    : "likeBttn"
-                }
-              />
-
-              <label>{value.Likes?.length}</label>
-            </div>
+            <span className="sidebarProfileName">{authState.username}</span>
+          </div>
+          <div className="sidebarProfileStats">
+            {listOfPosts.filter((p) => p.username === authState.username).length} posts
           </div>
         </div>
-      ))}
+
+        <div className="sidebarCard">
+          <div className="sidebarLabel">Top liked</div>
+          {topLikedPosts.map((post) => (
+            <div key={post.id} className="sidebarTopRow">
+              <span>{post.title}</span>
+              <span>♥ {post.Likes?.length || 0}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="sidebarCta">
+          <p>Got something to share?</p>
+          <button onClick={() => navigate("/createpost")}>Create a Post</button>
+        </div>
+      </div>
     </div>
   );
 }

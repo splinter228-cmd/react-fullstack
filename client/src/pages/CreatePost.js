@@ -1,14 +1,16 @@
-import React, { useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import axios from "axios";
+import api from "../helpers/api";
+import Notification from "../components/Notification";
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from "../helpers/AuthContext";
 
 function CreatePost() {
   const { authState } = useContext(AuthContext);
-
+  const [notif, setNotif] = useState({ open: false, message: "", severity: "error" })
   let navigate = useNavigate();
+
   const initialValues = {
     title: "",
     postText: "",
@@ -26,42 +28,61 @@ function CreatePost() {
   });
 
   const onSubmit = (data) => {
-    axios
-      .post("http://localhost:3001/posts", data, {
+    api
+      .post("/posts", data, {
         headers: { accessToken: localStorage.getItem("accessToken") }
       })
       .then((response) => {
-        navigate("/");
+        if (response.data.error) {
+          setNotif({ open: true, message: response.data.error, severity: "error" });
+        } else {
+          navigate("/");
+        }
       });
   };
 
   return (
-    <div className="createPostPage">
-      <Formik
-        initialValues={initialValues}
-        onSubmit={onSubmit}
-        validationSchema={validationSchema}
-      >
-        <Form className="formContainer">
-          <label>Title: </label>
-          <ErrorMessage name="title" component="span" />
-          <Field
-            autocomplete="off"
-            id="inputCreatePost"
-            name="title"
-            placeholder="(Ex. Title...)"
-          />
-          <label>Post: </label>
-          <ErrorMessage name="postText" component="span" />
-          <Field
-            autocomplete="off"
-            id="inputCreatePost"
-            name="postText"
-            placeholder="(Ex. Post...)"
-          />
-          <button type="submit"> Create Post</button>
-        </Form>
-      </Formik>
+    <div
+      className="createPostPage"
+      style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/CP.jpeg)` }}
+    >
+      <div className="glassCard">
+        <h1>Create Post</h1>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={onSubmit}
+          validationSchema={validationSchema}
+        >
+          <Form>
+            <ErrorMessage name="title" component="span" />
+            <div className="inputWithIcon">
+              <Field
+                autocomplete="off"
+                name="title"
+                placeholder="(Ex. Title...)"
+              />
+            </div>
+
+            <ErrorMessage name="postText" component="span" />
+            <div className="inputWithIcon">
+              <Field
+                autocomplete="off"
+                name="postText"
+                placeholder="(Ex. Post...)"
+              />
+            </div>
+
+            <button type="submit" className="pillButton">Create Post</button>
+          </Form>
+        </Formik>
+      </div>
+
+      <Notification
+        open={notif.open}
+        message={notif.message}
+        severity={notif.severity}
+        onClose={() => setNotif({ ...notif, open: false })}
+      />
     </div>
   );
 }

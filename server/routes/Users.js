@@ -7,8 +7,14 @@ const {sign} = require('jsonwebtoken');
 
 router.post("/", async (req, res) => {
     const { username, password } = req.body;
-    bcrypt.hash(password, 10).then((hash) => {
-        Users.create({
+
+    const existingUser = await Users.findOne({ where: { username: username } });
+    if (existingUser ) {
+        return res.json({ error: "This username is already taken" });
+    }
+
+    bcrypt.hash(password, 10).then(async (hash) => {
+        await Users.create({
             username: username,
             password: hash,
         });
@@ -56,7 +62,9 @@ router.put('/changepassword', validateToken, async (req, res) => {
     const user = await Users.findOne({where: { username: req.user.username}});
 
     bcrypt.compare(oldPassword, user.password).then(async (match) => {
-        if(!match) res.json({ error: "Wrong Password Entered!"});
+        if (!match) { 
+            return res.json({ error: "Wrong Password Entered!"});
+        }
 
         bcrypt.hash(newPassword, 10).then((hash) => {
             Users.update (

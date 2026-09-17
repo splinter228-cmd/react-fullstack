@@ -3,6 +3,8 @@ const router = express.Router();
 const { Comments } = require("../models");
 const { validateToken } = require("../middlewares/AuthMiddleware");
 
+const filter = require('../utils/profanityFilter');
+
 router.get("/:postId", async (req, res) => {
   const postId = req.params.postId;
   const comments = await Comments.findAll({ where: { PostId: postId } });
@@ -11,6 +13,11 @@ router.get("/:postId", async (req, res) => {
 
 router.post("/", validateToken, async (req, res) => {
   const comment = req.body;
+
+  if (filter.isProfane(comment.commentBody)) {
+    return res.json({ error: "Comment contains inappropriate language" });
+  }
+  
   const username = req.user.username;
   comment.username = username;
   const newComment = await Comments.create(comment);
