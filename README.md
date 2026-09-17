@@ -88,4 +88,4 @@ REACT_APP_API_URL=http://localhost:3001
 
 ## 📝 License
 
-This project is available for demonstration and portfolio purposes.
+All rights reserved.
